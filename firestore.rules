@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: daily_notes
+    // Document ID: YYYY-MM-DD
+    // Fields:
+    //   - message: string (required, max 2000 chars) - The affirmation message
+    //   - color_vibe: string (required, max 10 chars) - The hex color vibe
+    //   - authorUid: string (required, immutable) - The UID of the creator
+    //   - createdAt: timestamp (required, immutable) - Creation time
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email_verified == true &&
+             request.auth.token.email in ["oluwasaanumil@gmail.com", "second_admin@example.com"];
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.authorUid;
+    }
+
+    function uidUnchanged() {
+      return !('authorUid' in request.resource.data) || request.resource.data.authorUid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('authorUid' in request.resource.data) || request.resource.data.authorUid == resource.data.authorUid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isTimestamp(field) {
+      return request.resource.data[field] is timestamp;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Domain Validators
+    function isValidDailyNote() {
+      return hasOnlyAllowedFields(['message', 'color_vibe', 'authorUid', 'createdAt']) &&
+             validStringLength('message', 1, 2000) &&
+             validStringLength('color_vibe', 4, 10) &&
+             request.resource.data.color_vibe.matches("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$") &&
+             isTimestamp('createdAt');
+    }
+
+    match /daily_notes/{noteId} {
+      // Anyone authenticated can read the notes (since it's a gift for a friend)
+      allow read: if isAuthenticated();
+      
+      // Only the admin can create or update notes
+      allow create: if isAdmin() &&
+                    hasRequiredFields(['message', 'color_vibe', 'authorUid', 'createdAt']) &&
+                    isValidDailyNote() &&
+                    uidUnchanged();
+                    
+      allow update: if isAdmin() &&
+                    isValidDailyNote() &&
+                    uidNotModified() &&
+                    areImmutableFieldsUnchanged(['authorUid', 'createdAt']);
+                    
+      allow delete: if isAdmin();
+    }
+  }
+}

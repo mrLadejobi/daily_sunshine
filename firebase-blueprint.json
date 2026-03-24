@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "DailyNote": {
+      "title": "Daily Note",
+      "description": "A daily affirmation note.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The affirmation message."
+        },
+        "color_vibe": {
+          "type": "string",
+          "description": "The hex color vibe for the room."
+        },
+        "authorUid": {
+          "type": "string",
+          "description": "The UID of the user who created the note."
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "When the note was created."
+        }
+      },
+      "required": ["message", "color_vibe", "authorUid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "daily_notes/{noteId}": {
+      "schema": { "$ref": "#/entities/DailyNote" },
+      "description": "Collection of daily notes, where noteId is the date (YYYY-MM-DD)."
+    }
+  }
+}
