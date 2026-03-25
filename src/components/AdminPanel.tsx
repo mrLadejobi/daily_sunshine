@@ -3,7 +3,7 @@ import { collection, doc, setDoc, getDocs, query, orderBy, serverTimestamp } fro
 import { db, auth } from '../firebase';
 import { DailyNote } from '../types';
 import { format } from 'date-fns';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Bell } from 'lucide-react';
 
 export default function AdminPanel() {
   const [notes, setNotes] = useState<DailyNote[]>([]);
@@ -46,6 +46,51 @@ export default function AdminPanel() {
     } catch (error) {
       console.error("Error saving note:", error);
       alert("Failed to save note. Ensure you are logged in as the admin.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotify = async (noteId: string) => {
+    try {
+      setLoading(true);
+      // Get all users' tokens
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const tokens: string[] = [];
+      usersSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.fcmToken) {
+          tokens.push(data.fcmToken);
+        }
+      });
+
+      if (tokens.length === 0) {
+        alert("No users have enabled notifications yet.");
+        return;
+      }
+
+      // Call our backend API to send the notification
+      const response = await fetch('/api/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: "New Daily Sunshine! ☀️",
+          body: "Your room is ready for you today.",
+          tokens
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Notification sent successfully!");
+      } else {
+        alert("Failed to send notification: " + (result.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      alert("Error sending notification.");
     } finally {
       setLoading(false);
     }
@@ -115,7 +160,7 @@ export default function AdminPanel() {
           <h2 className="text-sm font-bold uppercase tracking-widest mb-6 text-[#050505] border-b border-[#050505]/10 pb-4">
             Scheduled Letters
           </h2>
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+          <div className="space-y-4 max-h-150 overflow-y-auto pr-4 custom-scrollbar">
             {notes.length === 0 ? (
               <p className="text-[#050505]/40 italic font-sans text-sm">The desk is empty. Write the first letter.</p>
             ) : (
@@ -124,7 +169,17 @@ export default function AdminPanel() {
                   <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: note.color_vibe }}></div>
                   <div className="flex justify-between items-start mb-3">
                     <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#050505]">{note.id}</span>
-                    <div className="w-6 h-6 rounded-full border border-[#050505]/10 shadow-sm" style={{ backgroundColor: note.color_vibe }} title={note.color_vibe}></div>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => handleNotify(note.id)}
+                        disabled={loading}
+                        className="text-[#050505]/40 hover:text-[#050505] transition-colors"
+                        title="Send Push Notification"
+                      >
+                        <Bell size={16} />
+                      </button>
+                      <div className="w-6 h-6 rounded-full border border-[#050505]/10 shadow-sm" style={{ backgroundColor: note.color_vibe }} title={note.color_vibe}></div>
+                    </div>
                   </div>
                   <p className="text-[#050505]/80 font-sans text-sm line-clamp-3 leading-relaxed">{note.message}</p>
                 </div>

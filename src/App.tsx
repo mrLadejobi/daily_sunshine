@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from './firebase';
+import { auth, db, messaging } from './firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getToken } from 'firebase/messaging';
 import { format } from 'date-fns';
 import { DailyNote } from './types';
 import Room from './components/Room';
@@ -42,12 +43,39 @@ export default function App() {
           setView('room');
         }
         await fetchTodayNote();
+        requestNotificationPermission(currentUser.uid);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  const requestNotificationPermission = async (uid: string) => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const msg = await messaging();
+        if (msg) {
+          const vapidKey = import.meta.env.VITE_VAPID_KEY;
+          if (!vapidKey) {
+            console.warn("VITE_VAPID_KEY is missing. Cannot get FCM token.");
+            return;
+          }
+          const currentToken = await getToken(msg, { vapidKey });
+          if (currentToken) {
+            // Save token to user's document
+            await setDoc(doc(db, 'users', uid), { 
+              fcmToken: currentToken,
+              lastUpdated: new Date()
+            }, { merge: true });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+    }
+  };
 
   const fetchTodayNote = async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
