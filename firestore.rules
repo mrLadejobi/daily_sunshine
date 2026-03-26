@@ -25,7 +25,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
              request.auth.token.email_verified == true &&
-             request.auth.token.email in ["oluwasaanumil@gmail.com", "second_admin@example.com"];
+             request.auth.token.email in ["oluwasaanumil@gmail.com", "ayomikun1308@gmail.com"];
     }
 
     function isDocOwner() {
