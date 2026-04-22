@@ -88,5 +88,16 @@ service cloud.firestore {
                     
       allow delete: if isAdmin();
     }
+    match /friend_notes/{noteId} {
+      // Authenticated users and admins can list, anyone can get by ID
+      allow read: if isAuthenticated() || isAdmin() || request.auth == null; 
+      
+      allow create: if isAdmin();
+      
+      // Allow the friend to update the document (submit their letter)
+      allow update: if isAdmin() || request.auth == null;
+      
+      allow delete: if isAdmin();
+    }
   }
 }

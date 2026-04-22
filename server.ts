@@ -2,6 +2,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import admin from "firebase-admin";
+import cron from "node-cron";
 
 if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
   try {
@@ -40,6 +41,53 @@ async function startServer() {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
+  });
+
+  // Setup Daily Cron Job at 9:00 AM WAT
+  cron.schedule("0 9 * * *", async () => {
+    try {
+      if (!admin.apps.length) {
+        console.warn("Firebase Admin not initialized, cannot run cron job.");
+        return;
+      }
+      
+      const db = admin.firestore();
+      const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
+
+      const noteRef = db.collection("daily_notes").doc(dateStr);
+      const noteSnap = await noteRef.get();
+
+      if (noteSnap.exists) {
+        const usersSnap = await db.collection("users").get();
+        const tokens: string[] = [];
+        
+        usersSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.fcmToken) {
+            tokens.push(data.fcmToken);
+          }
+        });
+
+        if (tokens.length > 0) {
+          const message = {
+            notification: { 
+              title: "New Daily Sunshine! ☀️", 
+              body: "A special message is ready for you today." 
+            },
+            tokens: tokens,
+          };
+          
+          const response = await admin.messaging().sendEachForMulticast(message);
+          console.log("Automated Daily Notification sent for", dateStr, response);
+        }
+      } else {
+        console.log(`No message scheduled for ${dateStr}. No notification sent.`);
+      }
+    } catch (error) {
+      console.error("Error in automated daily notification cron job:", error);
+    }
+  }, {
+    timezone: "Africa/Lagos"
   });
 
   if (process.env.NODE_ENV !== "production") {
