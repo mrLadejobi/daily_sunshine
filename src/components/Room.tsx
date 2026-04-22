@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DailyNote } from '../types';
 import confetti from 'canvas-confetti';
-import { LogOut, Mail } from 'lucide-react';
+import { LogOut, Mail, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import FriendsNotes from './FriendsNotes';
 
 interface RoomProps {
@@ -13,6 +14,21 @@ interface RoomProps {
 export default function Room({ note, onSignOut }: RoomProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showFriendsNotes, setShowFriendsNotes] = useState(false);
+  const letterRef = useRef<HTMLDivElement>(null);
+
+  const saveLetterAsImage = async () => {
+    if (!letterRef.current) return;
+    try {
+      const canvas = await html2canvas(letterRef.current, { backgroundColor: null, scale: 2 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `sunshine-note-${note?.id || 'letter'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error saving image:', error);
+    }
+  };
 
   const today = new Date();
   const isBirthday = today.getMonth() === 3 && today.getDate() === 23;
@@ -149,13 +165,20 @@ export default function Room({ note, onSignOut }: RoomProps) {
             >
               {/* The Letter */}
               <motion.div 
-                className="relative z-10 paper-texture p-10 md:p-16 rounded-xl shadow-[0_30px_80px_rgba(0,0,0,0.8)] border border-[#E6E6FA]/20 min-h-[400px] flex flex-col"
+                ref={letterRef}
+                className="relative z-10 paper-texture p-10 md:p-16 rounded-xl shadow-[0_30px_80px_rgba(0,0,0,0.8)] border border-[#E6E6FA]/20 min-h-[400px] flex flex-col bg-[#FAFAFF]"
               >
-                <div className="flex justify-between items-center mb-10 border-b border-[#4B0082]/10 pb-6">
+                <div className="flex justify-between items-center mb-10 border-b border-[#4B0082]/10 pb-6" data-html2canvas-ignore>
                   <span className="font-mono text-xs font-semibold uppercase tracking-[0.3em] text-[#4B0082]/50">{note?.id}</span>
-                  <button onClick={() => setIsOpen(false)} className="text-[#4B0082]/50 hover:text-[#4B0082] transition-colors font-sans text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <span>Close Letter</span>
-                  </button>
+                  <div className="flex gap-4">
+                    <button onClick={saveLetterAsImage} className="text-[#4B0082]/50 hover:text-[#4B0082] transition-colors font-sans text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                      <Download size={14} />
+                      <span>Save</span>
+                    </button>
+                    <button onClick={() => setIsOpen(false)} className="text-[#4B0082]/50 hover:text-[#4B0082] transition-colors font-sans text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                      <span>Close</span>
+                    </button>
+                  </div>
                 </div>
                 
                 <p className="font-display text-xl md:text-3xl text-[#2d004d] leading-relaxed flex-1 whitespace-pre-wrap font-medium">

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, Loader2 } from 'lucide-react';
+import { X, Heart, Loader2, Download } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import html2canvas from 'html2canvas';
 
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -20,6 +21,21 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
   const [selectedNote, setSelectedNote] = useState<FriendNote | null>(null);
   const [notes, setNotes] = useState<FriendNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const noteRef = useRef<HTMLDivElement>(null);
+
+  const saveNoteAsImage = async () => {
+    if (!noteRef.current || !selectedNote) return;
+    try {
+      const canvas = await html2canvas(noteRef.current, { backgroundColor: null, scale: 2 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `friend-note-${selectedNote.sender.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error saving image:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -137,7 +153,10 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="absolute inset-0 flex items-center justify-center"
               >
-                <div className="relative w-full max-w-2xl paper-texture p-8 md:p-12 rounded-xl shadow-[0_0_50px_rgba(75,0,130,0.5)] border border-[#E6E6FA]/30">
+                <div 
+                  ref={noteRef}
+                  className="relative w-full max-w-2xl paper-texture p-8 md:p-12 rounded-xl shadow-[0_0_50px_rgba(75,0,130,0.5)] border border-[#E6E6FA]/30 bg-[#FAFAFF]"
+                >
                   <div className="absolute -top-4 -left-4 text-[#FFD700] opacity-50">
                     <Heart size={48} fill="currentColor" />
                   </div>
@@ -153,7 +172,13 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
                     </div>
                   </div>
                   
-                  <div className="mt-12 flex justify-center">
+                  <div className="mt-12 flex justify-center gap-4 flex-wrap" data-html2canvas-ignore>
+                    <button 
+                      onClick={saveNoteAsImage}
+                      className="px-8 py-3 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#8B6508] rounded-full font-sans font-medium uppercase tracking-widest text-sm transition-colors border border-[#FFD700]/40 flex items-center gap-2"
+                    >
+                      <Download size={16} /> Save Letter
+                    </button>
                     <button 
                       onClick={() => setSelectedNote(null)}
                       className="px-8 py-3 bg-[#4B0082]/10 hover:bg-[#4B0082]/20 text-[#4B0082] rounded-full font-sans font-medium uppercase tracking-widest text-sm transition-colors border border-[#4B0082]/20"
