@@ -206,7 +206,7 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8 bg-[#FAFAFF] rounded-sm shadow-[0_10px_40px_rgba(0,0,0,0.05)] border border-[#E6E6FA] mt-10 paper-texture relative">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8 bg-[#FAFAFF] rounded-sm shadow-[0_10px_40px_rgba(0,0,0,0.05)] border border-[#E6E6FA] mt-4 md:mt-10 paper-texture relative">
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-sm shadow-lg border animate-in slide-in-from-top-5 fade-in duration-300 ${
           toast.type === 'success' ? 'bg-[#FAFAFF] border-[#4B0082]/20 text-[#4B0082]' : 'bg-[#ffefef] border-red-200 text-red-800'
@@ -246,9 +246,9 @@ export default function AdminPanel() {
         </div>
       )}
 
-      <div className="flex justify-between items-end mb-10">
-        <h1 className="text-5xl font-display text-[#4B0082] tracking-tight uppercase">Dashboard</h1>
-        <div className="flex gap-4 border-b border-[#4B0082]/20">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 md:mb-10 gap-4 sm:gap-0">
+        <h1 className="text-3xl md:text-5xl font-display text-[#4B0082] tracking-tight uppercase">Dashboard</h1>
+        <div className="flex gap-4 border-b border-[#4B0082]/20 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1">
           <button 
             onClick={() => setActiveTab('daily')}
             className={`pb-2 px-4 font-sans font-bold uppercase tracking-widest text-xs transition-colors ${activeTab === 'daily' ? 'text-[#4B0082] border-b-2 border-[#4B0082]' : 'text-[#4B0082]/50 hover:text-[#4B0082]'}`}
@@ -340,7 +340,7 @@ export default function AdminPanel() {
                 notes.map(note => (
                   <div key={note.id} className={`p-6 border ${isEditing && date === note.id ? 'border-[#4B0082] bg-white' : 'border-[#4B0082]/10 bg-white/50'} hover:bg-white transition-colors relative group`}>
                     <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: note.color_vibe }}></div>
-                    <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-2 sm:gap-0">
                       <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#4B0082]">{note.id}</span>
                       <div className="flex items-center gap-3">
                         <button 
@@ -420,8 +420,8 @@ export default function AdminPanel() {
               ) : (
                 friendLinks.map(link => (
                   <div key={link.id} className="p-6 border border-[#4B0082]/10 bg-white/50 hover:bg-white transition-colors relative group">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-3 sm:gap-0">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <span className="font-display text-xl text-[#4B0082]">{link.sender}</span>
                         {link.isSubmitted ? (
                           <span className="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Submitted</span>

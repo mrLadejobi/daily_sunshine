@@ -106,15 +106,15 @@ export default function FriendLetterForm({ friendId }: FriendLetterFormProps) {
       
       <div className="relative z-10 w-full max-w-2xl animate-in slide-in-from-bottom-8 duration-700">
         <div className="text-center mb-10">
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-[#FFD700] mb-4 drop-shadow-md">A Message for Hephzibah</h1>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFD700] mb-4 drop-shadow-md">A Message for Hephzibah</h1>
           <p className="font-sans text-lg md:text-xl text-[#E6E6FA]/90">
             Hi {friendData?.sender}! Write your special birthday message below.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="paper-texture p-6 md:p-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[#E6E6FA]/20 relative">
+        <form onSubmit={handleSubmit} className="paper-texture p-5 sm:p-6 md:p-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[#E6E6FA]/20 relative">
           <div className="absolute -top-6 right-8 text-[#FFD700] opacity-80 animate-float-slow">
-            <Heart size={48} fill="currentColor" />
+            <Heart size={48} className="w-8 h-8 sm:w-12 sm:h-12" fill="currentColor" />
           </div>
 
           <textarea 
@@ -129,7 +129,7 @@ export default function FriendLetterForm({ friendId }: FriendLetterFormProps) {
 
           <div className="mt-12 text-right">
             <span className="block font-sans text-sm text-[#4B0082]/60 uppercase tracking-widest mb-2">With love,</span>
-            <span className="font-display font-bold text-3xl text-[#4B0082]">{friendData?.sender}</span>
+            <span className="font-display font-bold text-2xl md:text-3xl text-[#4B0082]">{friendData?.sender}</span>
           </div>
 
           <button 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Heart, Loader2, Download } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -26,8 +26,16 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
   const saveNoteAsImage = async () => {
     if (!noteRef.current || !selectedNote) return;
     try {
-      const canvas = await html2canvas(noteRef.current, { backgroundColor: null, scale: 2 });
-      const dataUrl = canvas.toDataURL('image/png');
+      const dataUrl = await toPng(noteRef.current, { 
+        backgroundColor: 'transparent',
+        pixelRatio: 2,
+        filter: (node) => {
+          if (node.hasAttribute && node.hasAttribute('data-html2canvas-ignore')) {
+            return false;
+          }
+          return true;
+        }
+      });
       const link = document.createElement('a');
       link.download = `friend-note-${selectedNote.sender.replace(/\s+/g, '-').toLowerCase()}.png`;
       link.href = dataUrl;
@@ -84,20 +92,20 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
         <div className="absolute bottom-[20%] right-[10%] w-64 h-64 bg-[#E6E6FA] rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
       </div>
 
-      <div className="relative w-full max-w-4xl h-[80vh] flex flex-col">
+      <div className="relative w-full max-w-4xl h-[85vh] md:h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8 relative z-10">
-          <h2 className="text-3xl md:text-5xl font-display text-[#FAFAFF] drop-shadow-lg">Love from your friends</h2>
+        <div className="flex justify-between items-start md:items-center mb-6 md:mb-8 relative z-10">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-display text-[#FAFAFF] drop-shadow-lg leading-tight">Love from your friends</h2>
           <button 
             onClick={onClose}
-            className="p-3 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-full text-white transition-all"
+            className="p-2 md:p-3 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md rounded-full text-white transition-all shrink-0 ml-4 mt-1 md:mt-0"
           >
-            <X size={24} />
+            <X size={20} className="md:w-6 md:h-6" />
           </button>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-0">
           <AnimatePresence mode="wait">
             {!selectedNote ? (
               <motion.div 
@@ -105,7 +113,7 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="grid grid-cols-2 md:grid-cols-3 gap-6 overflow-y-auto pr-4 pb-12 custom-scrollbar h-full content-start"
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 overflow-y-auto pr-2 pb-12 custom-scrollbar h-full content-start"
               >
                 {loading ? (
                   <div className="col-span-full flex flex-col items-center justify-center py-20">
@@ -155,14 +163,14 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
               >
                 <div 
                   ref={noteRef}
-                  className="relative w-full max-w-2xl paper-texture p-8 md:p-12 rounded-xl shadow-[0_0_50px_rgba(75,0,130,0.5)] border border-[#E6E6FA]/30 bg-[#FAFAFF]"
+                  className="relative w-full max-w-2xl paper-texture p-6 sm:p-8 md:p-12 rounded-xl shadow-[0_0_50px_rgba(75,0,130,0.5)] border border-[#E6E6FA]/30 bg-[#FAFAFF]"
                 >
-                  <div className="absolute -top-4 -left-4 text-[#FFD700] opacity-50">
+                  <div className="absolute -top-4 -left-4 text-[#FFD700] opacity-50 scale-75 md:scale-100">
                     <Heart size={48} fill="currentColor" />
                   </div>
                   
                   <div className="relative z-10">
-                    <p className="font-display italic text-2xl md:text-3xl text-[#2d004d] leading-relaxed mb-12">
+                    <p className="font-display italic text-xl sm:text-2xl md:text-3xl text-[#2d004d] leading-relaxed mb-8 md:mb-12 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
                       "{selectedNote.message}"
                     </p>
                     
@@ -172,18 +180,18 @@ export default function FriendsNotes({ onClose }: FriendsNotesProps) {
                     </div>
                   </div>
                   
-                  <div className="mt-12 flex justify-center gap-4 flex-wrap" data-html2canvas-ignore>
+                  <div className="mt-8 md:mt-12 flex justify-center gap-3 md:gap-4 flex-wrap" data-html2canvas-ignore>
                     <button 
                       onClick={saveNoteAsImage}
-                      className="px-8 py-3 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#8B6508] rounded-full font-sans font-medium uppercase tracking-widest text-sm transition-colors border border-[#FFD700]/40 flex items-center gap-2"
+                      className="px-6 md:px-8 py-3 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#8B6508] rounded-full font-sans font-medium uppercase tracking-widest text-xs md:text-sm transition-colors border border-[#FFD700]/40 flex items-center gap-2"
                     >
-                      <Download size={16} /> Save Letter
+                      <Download size={16} /> Save
                     </button>
                     <button 
                       onClick={() => setSelectedNote(null)}
-                      className="px-8 py-3 bg-[#4B0082]/10 hover:bg-[#4B0082]/20 text-[#4B0082] rounded-full font-sans font-medium uppercase tracking-widest text-sm transition-colors border border-[#4B0082]/20"
+                      className="px-6 md:px-8 py-3 bg-[#4B0082]/10 hover:bg-[#4B0082]/20 text-[#4B0082] rounded-full font-sans font-medium uppercase tracking-widest text-xs md:text-sm transition-colors border border-[#4B0082]/20"
                     >
-                      Back to Letters
+                      Back
                     </button>
                   </div>
                 </div>

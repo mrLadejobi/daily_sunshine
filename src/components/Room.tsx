@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { DailyNote } from '../types';
 import confetti from 'canvas-confetti';
 import { LogOut, Mail, Download } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import FriendsNotes from './FriendsNotes';
 
 interface RoomProps {
@@ -19,8 +19,16 @@ export default function Room({ note, onSignOut }: RoomProps) {
   const saveLetterAsImage = async () => {
     if (!letterRef.current) return;
     try {
-      const canvas = await html2canvas(letterRef.current, { backgroundColor: null, scale: 2 });
-      const dataUrl = canvas.toDataURL('image/png');
+      const dataUrl = await toPng(letterRef.current, { 
+        backgroundColor: 'transparent',
+        pixelRatio: 2,
+        filter: (node) => {
+          if (node.hasAttribute && node.hasAttribute('data-html2canvas-ignore')) {
+            return false;
+          }
+          return true;
+        }
+      });
       const link = document.createElement('a');
       link.download = `sunshine-note-${note?.id || 'letter'}.png`;
       link.href = dataUrl;
@@ -32,6 +40,7 @@ export default function Room({ note, onSignOut }: RoomProps) {
 
   const today = new Date();
   const isBirthday = today.getMonth() === 3 && today.getDate() === 23;
+  const isBirthdayOrAfter = today >= new Date('2026-04-23T00:00:00');
 
   const handleOpen = () => {
     if (note && !isOpen) {
@@ -103,7 +112,7 @@ export default function Room({ note, onSignOut }: RoomProps) {
               whileHover={{ scale: 1.05, rotate: 1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleOpen}
-              className={`cursor-pointer group relative w-80 h-52 ${hasNote ? 'opacity-100' : 'opacity-50 grayscale cursor-not-allowed'}`}
+              className={`cursor-pointer group relative w-72 sm:w-80 h-48 sm:h-52 ${hasNote ? 'opacity-100' : 'opacity-50 grayscale cursor-not-allowed'}`}
             >
               {/* Envelope Shadow */}
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-10 bg-[#4B0082]/40 blur-2xl rounded-full"></div>
@@ -142,7 +151,7 @@ export default function Room({ note, onSignOut }: RoomProps) {
                 </motion.span>
               )}
 
-              {isBirthday && (
+              {isBirthdayOrAfter && (
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -166,7 +175,7 @@ export default function Room({ note, onSignOut }: RoomProps) {
               {/* The Letter */}
               <motion.div 
                 ref={letterRef}
-                className="relative z-10 paper-texture p-10 md:p-16 rounded-xl shadow-[0_30px_80px_rgba(0,0,0,0.8)] border border-[#E6E6FA]/20 min-h-[400px] flex flex-col bg-[#FAFAFF]"
+                className="relative z-10 paper-texture p-6 sm:p-10 md:p-16 rounded-xl shadow-[0_30px_80px_rgba(0,0,0,0.8)] border border-[#E6E6FA]/20 min-h-[300px] md:min-h-[400px] flex flex-col bg-[#FAFAFF]"
               >
                 <div className="flex justify-between items-center mb-10 border-b border-[#4B0082]/10 pb-6" data-html2canvas-ignore>
                   <span className="font-mono text-xs font-semibold uppercase tracking-[0.3em] text-[#4B0082]/50">{note?.id}</span>
@@ -181,13 +190,13 @@ export default function Room({ note, onSignOut }: RoomProps) {
                   </div>
                 </div>
                 
-                <p className="font-display text-xl md:text-3xl text-[#2d004d] leading-relaxed flex-1 whitespace-pre-wrap font-medium">
+                <p className="font-display text-lg sm:text-xl md:text-3xl text-[#2d004d] leading-relaxed flex-1 whitespace-pre-wrap font-medium max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
                   {note?.message}
                 </p>
                 
                 <div className="mt-16 text-right">
                   <span className="block font-sans text-sm text-[#4B0082]/60 uppercase tracking-[0.2em] mb-2 font-medium">With all my love,</span>
-                  <span className="font-display italic font-bold text-5xl text-[#4B0082] tracking-tight">Your Friend</span>
+                  <span className="font-display italic font-bold text-3xl sm:text-5xl text-[#4B0082] tracking-tight">Your Friend</span>
                 </div>
               </motion.div>
             </motion.div>
